@@ -14,6 +14,7 @@
     "tabs",
     "activeTab",
     "storage",
-    "unlimitedStorage"
+    "unlimitedStorage",
+    "<all_urls>"
   ]
 }
