@@ -73,6 +73,7 @@ chrome.tabs.onActivated.addListener(function(activeInfo) {
 	console.log('on actived');
 });
 
+// TODO tab can be updated without being in focus
 chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
 	// Already have the tab so don't have to get tab like onActivated
 	currentTabReceived(tab);
