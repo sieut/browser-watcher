@@ -40,6 +40,10 @@ function currentTabReceived(tab) {
 	}
 }
 
+function getProtocol(url) {
+	return url.split("/")[0];
+}
+
 function getDomain(url) {
 	return url.split("/")[2];
 }
