@@ -7,7 +7,6 @@ var connectedTabId = [];
 var currentTabId;
 
 function currentTabReceived(tab) {
-	console.log(getProtocol(tab.url))
 	if (connectedTabId.indexOf(tab.id) == -1
 			&& tab.url && getProtocol(tab.url) != "chrome:") {
 		chrome.tabs.executeScript(tab.id, {code: '(' + contentScript + ')();'}, function() {
