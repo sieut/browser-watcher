@@ -8,7 +8,7 @@
   "browser_action": {
   },
   "background": {
-    "scripts": ["test.js"]
+    "scripts": ["background.js"]
   },
   "permissions": [
     "tabs",

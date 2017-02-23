@@ -3,20 +3,12 @@ var currentPageInfo = {
 	startTime: null
 };
 
+var connectedTabId = [];
+
 function currentTabReceived(tab) {
-	// Content script to inject into current tab
-	// and tell the extension if chrome is blurred
-	function contentScript() {
-		var port = chrome.runtime.connect();
-
-		window.addEventListener("blur", function() {
-			console.log("on blur");
-			port.postMessage({event: 'blur'});
-		});
-
-		window.addEventListener("focus", function() {
-			console.log("on focus");
-			port.postMessage({event: 'focus'});
+	if (connectedTabId.indexOf(tab.id) == -1) {
+		chrome.tabs.executeScript(tab.id, {code: '(' + contentScript + ')();'}, function() {
+			chrome.tabs.sendMessage(tab.id, tab.id);
 		});
 	}
 
@@ -30,7 +22,6 @@ function currentTabReceived(tab) {
 		}
 
 		if (getProtocol(tab.url) != "chrome") {
-			chrome.tabs.executeScript(tab.id, {code: '(' + contentScript + ')();'});
 			currentPageInfo.domain = currentTabDomain;
 			currentPageInfo.startTime = new Date();
 		} else {
@@ -38,6 +29,14 @@ function currentTabReceived(tab) {
 			currentPageInfo.startTime = null;
 		}
 	}
+}
+
+function onWindowReFocused() {
+
+}
+
+function onWindowBlurred() {
+
 }
 
 function getProtocol(url) {
@@ -54,7 +53,6 @@ function storeNewTimeSpent(domain, timeSpent) {
 		// If this domain is already in the storage
 		if (Object.keys(oldValue).length) {
 			totalTimeSpent = timeSpent / 1000 + oldValue[domain];
-			console.log('timeSpent: ' + timeSpent + ' ,oldValue:' + oldValue[domain]);
 		} else {
 			totalTimeSpent = timeSpent / 1000;
 		}
@@ -62,27 +60,25 @@ function storeNewTimeSpent(domain, timeSpent) {
 		// Store to storage
 		toStoreObject = {};
 		toStoreObject[domain] = Math.round(totalTimeSpent);
-		chrome.storage.local.set(toStoreObject, function() {
-			console.log('Updated time spent for domain ' + domain + ' with value ' + totalTimeSpent);
-		});
+		chrome.storage.local.set(toStoreObject);
 	});
 }
 
 chrome.tabs.onActivated.addListener(function(activeInfo) {
 	chrome.tabs.get(activeInfo.tabId, currentTabReceived);
-	console.log('on actived');
 });
 
 // TODO tab can be updated without being in focus
 chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
+	chrome.tabs.getCurrent(function(tab) {
+
+	});
+
 	// Already have the tab so don't have to get tab like onActivated
 	currentTabReceived(tab);
-	console.log('on updated');
 });
 
 chrome.windows.onFocusChanged.addListener(function(windowId) {
-	console.log('on focus changed ' + windowId);
-
 	if (windowId != chrome.windows.WINDOW_ID_NONE) {
 
 	}
@@ -94,7 +90,33 @@ chrome.browserAction.onClicked.addListener(function() {
 
 chrome.runtime.onConnect.addListener(function(port) {
 	console.log('on connect');
+
 	port.onMessage.addListener(function(msg) {
 		console.log(msg);
+		if (msg.event == "blur") {
+
+		} else if (msg.event == "focus") {
+
+		} else if (msg.tabId) {
+			connectedTabId.push(msg.tabId);
+		}
 	});
 });
+
+// Content script to inject into current tab
+// and tell the extension if chrome is blurred
+function contentScript() {
+	chrome.runtime.onMessage.addListener(function(message) {
+		var port = chrome.runtime.connect();
+
+		window.addEventListener("blur", function() {
+			port.postMessage({event: 'blur'});
+		});
+
+		window.addEventListener("focus", function() {
+			port.postMessage({event: 'focus'});
+		});
+
+		port.postMessage({tabId: message});
+	})
+}
