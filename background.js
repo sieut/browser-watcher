@@ -35,7 +35,7 @@ function currentTabReceived(tab) {
 	}
 }
 
-function onWindowReFocused() {
+function onWindowFocused() {
 
 }
 
@@ -84,25 +84,16 @@ chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
 	}
 });
 
-chrome.windows.onFocusChanged.addListener(function(windowId) {
-	if (windowId != chrome.windows.WINDOW_ID_NONE) {
-
-	}
-});
-
 chrome.browserAction.onClicked.addListener(function() {
 	chrome.storage.local.get(null, function(result){console.log(result)});
 });
 
 chrome.runtime.onConnect.addListener(function(port) {
-	console.log('on connect');
-
 	port.onMessage.addListener(function(msg) {
-		console.log(msg);
 		if (msg.event == "blur") {
-
+			onWindowBlurred();
 		} else if (msg.event == "focus") {
-
+			onWindowFocused();
 		} else if (msg.tabId) {
 			connectedTabId.push(msg.tabId);
 		}
