@@ -7,7 +7,9 @@ var connectedTabId = [];
 var currentTabId;
 
 function currentTabReceived(tab) {
-	if (connectedTabId.indexOf(tab.id) == -1) {
+	console.log(getProtocol(tab.url))
+	if (connectedTabId.indexOf(tab.id) == -1
+			&& tab.url && getProtocol(tab.url) != "chrome:") {
 		chrome.tabs.executeScript(tab.id, {code: '(' + contentScript + ')();'}, function() {
 			chrome.tabs.sendMessage(tab.id, tab.id);
 		});
@@ -24,7 +26,7 @@ function currentTabReceived(tab) {
 			storeNewTimeSpent(currentPageInfo.domain, timeSpent);
 		}
 
-		if (getProtocol(tab.url) != "chrome") {
+		if (getProtocol(tab.url) != "chrome:") {
 			currentPageInfo.domain = currentTabDomain;
 			currentPageInfo.startTime = new Date();
 		} else {
@@ -43,10 +45,12 @@ function onWindowBlurred() {
 }
 
 function getProtocol(url) {
+	if (!url) return "";
 	return url.split("/")[0];
 }
 
 function getDomain(url) {
+	if (!url) return "";
 	return url.split("/")[2];
 }
 
