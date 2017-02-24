@@ -6,6 +6,9 @@ var currentPageInfo = {
 var connectedTabId = [];
 var currentTabId;
 
+var onWindowFocusedPtr = onWindowFocused;
+var onWindowBlurredPtr = onWindowBlurred;
+
 function currentTabReceived(tab) {
 	if (connectedTabId.indexOf(tab.id) == -1
 			&& tab.url && getProtocol(tab.url) != "chrome:") {
@@ -36,11 +39,11 @@ function currentTabReceived(tab) {
 }
 
 function onWindowFocused() {
-
+	console.log("on focus");
 }
 
 function onWindowBlurred() {
-
+	console.log("on blur");
 }
 
 function getProtocol(url) {
@@ -71,7 +74,14 @@ function storeNewTimeSpent(domain, timeSpent) {
 }
 
 chrome.tabs.onActivated.addListener(function(activeInfo) {
+	console.log("on activated");
+
+	onWindowFocusedPtr = null;
+	onWindowBlurredPtr = null;
+
 	chrome.tabs.get(activeInfo.tabId, currentTabReceived);
+
+	chrome.alarms.create("resetPtrs", {when: Date.now() + 500});
 });
 
 // TODO tab can be updated without being in focus
@@ -91,14 +101,19 @@ chrome.browserAction.onClicked.addListener(function() {
 chrome.runtime.onConnect.addListener(function(port) {
 	port.onMessage.addListener(function(msg) {
 		if (msg.event == "blur") {
-			onWindowBlurred();
+			if (onWindowBlurredPtr) onWindowBlurredPtr();
 		} else if (msg.event == "focus") {
-			onWindowFocused();
+			if (onWindowFocusedPtr) onWindowFocusedPtr();
 		} else if (msg.tabId) {
 			connectedTabId.push(msg.tabId);
 		}
 	});
 });
+
+chrome.alarms.onAlarm.addListener(function(alarm) {
+	onWindowFocusedPtr = onWindowFocused;
+	onWindowBlurredPtr = onWindowBlurred;
+})
 
 // Content script to inject into current tab
 // and tell the extension if chrome is blurred
