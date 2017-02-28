@@ -84,8 +84,6 @@ function storeNewTimeSpent(domain, timeSpent) {
 }
 
 chrome.tabs.onActivated.addListener(function(activeInfo) {
-	console.log("on activated");
-
 	onWindowFocusedPtr = null;
 	onWindowBlurredPtr = null;
 
