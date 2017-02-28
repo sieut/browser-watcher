@@ -39,16 +39,12 @@ function currentTabReceived(tab) {
 }
 
 function onWindowFocused() {
-	console.log("on focus");
-
 	chrome.tabs.query({ currentWindow: true, active: true }, function (tabs) {
 		currentTabReceived(tabs[0]);
 	});
 }
 
 function onWindowBlurred() {
-	console.log("on blur");
-
 	var timeSpent = new Date() - currentPageInfo.startTime;
 	storeNewTimeSpent(currentPageInfo.domain, timeSpent);
 
