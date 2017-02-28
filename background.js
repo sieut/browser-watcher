@@ -10,6 +10,9 @@ var onWindowFocusedPtr = onWindowFocused;
 var onWindowBlurredPtr = onWindowBlurred;
 
 function currentTabReceived(tab) {
+	// Only inject script if
+	//		- Tab hasn't connected (=> it wouldn't appear in connectedTabId)
+	//		- User is on a page (not newtab, settings, etc.)
 	if (connectedTabId.indexOf(tab.id) == -1
 			&& tab.url && getProtocol(tab.url) != "chrome:") {
 		chrome.tabs.executeScript(tab.id, {code: '(' + contentScript + ')();'}, function() {
@@ -17,21 +20,28 @@ function currentTabReceived(tab) {
 		});
 	}
 
+	// Update currentTabId
 	currentTabId = tab.id;
 
 	var currentTabDomain = getDomain(tab.url);
+	// If the user is still in the same domain, then don't do anything
 	if (currentPageInfo.domain == currentTabDomain) {
 		return;
 	} else {
+		// If the user was on a page (not newtab, settings, etc.)
+		// then update their time spent on that page
 		if (currentPageInfo.domain.length) {
 			var timeSpent = new Date() - currentPageInfo.startTime;
 			storeNewTimeSpent(currentPageInfo.domain, timeSpent);
 		}
 
+		// If the user is on a page (not newtab, settings, etc.) then update currentInfo
 		if (getProtocol(tab.url) != "chrome:") {
 			currentPageInfo.domain = currentTabDomain;
 			currentPageInfo.startTime = new Date();
-		} else {
+		}
+		// Else set the info to null
+		else {
 			currentPageInfo.domain = '';
 			currentPageInfo.startTime = null;
 		}
@@ -39,15 +49,19 @@ function currentTabReceived(tab) {
 }
 
 function onWindowFocused() {
+	// Get current tab and call currentTabReceived
 	chrome.tabs.query({ currentWindow: true, active: true }, function (tabs) {
 		currentTabReceived(tabs[0]);
 	});
 }
 
 function onWindowBlurred() {
+	// Update time spent on current page
+	// Note: if current page is newtab, settings, etc. then it cannot call onblurred
 	var timeSpent = new Date() - currentPageInfo.startTime;
 	storeNewTimeSpent(currentPageInfo.domain, timeSpent);
 
+	// Set info to null
 	currentPageInfo.domain = '';
 	currentPageInfo.startTime = null;
 }
@@ -65,7 +79,7 @@ function getDomain(url) {
 function storeNewTimeSpent(domain, timeSpent) {
 	chrome.storage.local.get(domain, function(oldValue) {
 		var totalTimeSpent;
-		// If this domain is already in the storage
+		// If this domain is already in the storage, update with the existing value
 		if (Object.keys(oldValue).length) {
 			totalTimeSpent = timeSpent / 1000 + oldValue[domain];
 		} else {
@@ -80,15 +94,17 @@ function storeNewTimeSpent(domain, timeSpent) {
 }
 
 chrome.tabs.onActivated.addListener(function(activeInfo) {
+	// Prevent onFocused and onBlurred being called
 	onWindowFocusedPtr = null;
 	onWindowBlurredPtr = null;
 
+	// Handle current tab
 	chrome.tabs.get(activeInfo.tabId, currentTabReceived);
 
+	// Use alarm to setTimeout and set onFocused and onBlurred ptrs again
 	chrome.alarms.create("resetPtrs", {when: Date.now() + 500});
 });
 
-// TODO tab can be updated without being in focus
 chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
 	// Only save browsing data if current tab is updated
 	if (currentTabId == tabId && changeInfo.status == "complete") {
@@ -98,21 +114,26 @@ chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
 });
 
 chrome.browserAction.onClicked.addListener(function() {
+	// Output user's browsing data
 	chrome.storage.local.get(null, function(result){console.log(result)});
 });
 
 chrome.runtime.onConnect.addListener(function(port) {
+	// Add listener to events
 	port.onMessage.addListener(function(msg) {
 		if (msg.event == "blur") {
 			if (onWindowBlurredPtr) onWindowBlurredPtr();
 		} else if (msg.event == "focus") {
 			if (onWindowFocusedPtr) onWindowFocusedPtr();
 		} else if (msg.tabId) {
+			// Extension is told that tab is connected
+			// record tabId into connectedTabId
 			connectedTabId.push(msg.tabId);
 		}
 	});
 });
 
+// Reset onFocused and onBlurred ptrs
 chrome.alarms.onAlarm.addListener(function(alarm) {
 	onWindowFocusedPtr = onWindowFocused;
 	onWindowBlurredPtr = onWindowBlurred;
@@ -122,16 +143,18 @@ chrome.alarms.onAlarm.addListener(function(alarm) {
 // and tell the extension if chrome is blurred
 function contentScript() {
 	chrome.runtime.onMessage.addListener(function(message) {
+		// Connect to the extension
 		var port = chrome.runtime.connect();
 
+		// Listeners
 		window.addEventListener("blur", function() {
 			port.postMessage({event: 'blur'});
 		});
-
 		window.addEventListener("focus", function() {
 			port.postMessage({event: 'focus'});
 		});
 
+		// Tell the extension that this tab has been connected
 		port.postMessage({tabId: message});
 	})
 }
