@@ -48,6 +48,12 @@ function onWindowFocused() {
 
 function onWindowBlurred() {
 	console.log("on blur");
+
+	var timeSpent = new Date() - currentPageInfo.startTime;
+	storeNewTimeSpent(currentPageInfo.domain, timeSpent);
+
+	currentPageInfo.domain = '';
+	currentPageInfo.startTime = null;
 }
 
 function getProtocol(url) {
