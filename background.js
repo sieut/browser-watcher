@@ -96,9 +96,8 @@ chrome.tabs.onActivated.addListener(function(activeInfo) {
 
 // TODO tab can be updated without being in focus
 chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
-	// Only save browsing data if current tab is updated with a different domain
-	if (currentTabId == tabId && getDomain(changeInfo.url) != currentPageInfo.domain
-				&& changeInfo.status == "complete") {
+	// Only save browsing data if current tab is updated
+	if (currentTabId == tabId && changeInfo.status == "complete") {
 		// Already have the tab so don't have to get tab like onActivated
 		currentTabReceived(tab);
 	}
