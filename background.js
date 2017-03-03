@@ -55,7 +55,8 @@ function currentTabReceived(tab) {
 }
 
 function onWindowFocused() {
-	console.log('on Focused');
+	//console.log('on Focused');
+
 	// Get current tab and call currentTabReceived
 	chrome.tabs.query({ currentWindow: true, active: true }, function (tabs) {
 		currentTabReceived(tabs[0]);
@@ -63,7 +64,8 @@ function onWindowFocused() {
 }
 
 function onWindowBlurred() {
-	console.log('on Blurred');
+	//console.log('on Blurred');
+
 	// Update time spent on current page
 	if (currentPageInfo.domain.length) {
 		var timeSpent = new Date() - currentPageInfo.startTime;
@@ -103,7 +105,7 @@ function storeNewTimeSpent(domain, timeSpent) {
 }
 
 chrome.tabs.onActivated.addListener(function(activeInfo) {
-	console.log('on Activated');
+	//console.log('on Activated');
 
 	// Prevent onFocused and onBlurred being called
 	onWindowFocusedPtr = null;
@@ -119,7 +121,8 @@ chrome.tabs.onActivated.addListener(function(activeInfo) {
 chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
 	// Only save browsing data if current tab is updated
 	if (currentTabId == tabId && changeInfo.status == "complete") {
-		console.log('on Updated');
+		//console.log('on Updated');
+
 		// Already have the tab so don't have to get tab like onActivated
 		currentTabReceived(tab);
 	}
@@ -131,7 +134,8 @@ chrome.browserAction.onClicked.addListener(function() {
 });
 
 chrome.runtime.onConnect.addListener(function(port) {
-	console.log('on Connected');
+	//console.log('on Connected');
+
 	// Add listener to events
 	port.onMessage.addListener(function(msg) {
 		if (msg.event == "blur") {
