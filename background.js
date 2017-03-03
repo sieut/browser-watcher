@@ -128,6 +128,20 @@ chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
 	}
 });
 
+chrome.tabs.onRemoved.addListener(function(tabId){
+	chrome.tabs.query({ active: true }, function (tabs) {
+		if (tabs.length == 0) {
+			if (currentPageInfo.domain.length) {
+				var timeSpent = new Date() - currentPageInfo.startTime;
+				storeNewTimeSpent(currentPageInfo.domain, timeSpent);
+			}
+
+			currentPageInfo.domain = '';
+			currentPageInfo.startTime = null;
+		}
+	});
+});
+
 chrome.browserAction.onClicked.addListener(function() {
 	if (currentPageInfo.domain.length) {
 		var timeSpent = new Date() - currentPageInfo.startTime;
