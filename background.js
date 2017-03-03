@@ -129,8 +129,14 @@ chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
 });
 
 chrome.browserAction.onClicked.addListener(function() {
+	if (currentPageInfo.domain.length) {
+		var timeSpent = new Date() - currentPageInfo.startTime;
+		storeNewTimeSpent(currentPageInfo.domain, timeSpent);
+		currentPageInfo.startTime = new Date();
+	}
+
 	// Output user's browsing data
-	chrome.storage.local.get(null, function(result){console.log(result)});
+	chrome.alarms.create("showData", {when: Date.now() + 200});
 });
 
 chrome.runtime.onConnect.addListener(function(port) {
@@ -152,8 +158,12 @@ chrome.runtime.onConnect.addListener(function(port) {
 
 // Reset onFocused and onBlurred ptrs
 chrome.alarms.onAlarm.addListener(function(alarm) {
-	onWindowFocusedPtr = onWindowFocused;
-	onWindowBlurredPtr = onWindowBlurred;
+	if (alarm.name == "resetPtrs") {
+		onWindowFocusedPtr = onWindowFocused;
+		onWindowBlurredPtr = onWindowBlurred;
+	} else if (alarm.name == "showData") {
+		chrome.storage.local.get(null, function(result){console.log(result)});
+	}
 })
 
 // Content script to inject into current tab
