@@ -23,7 +23,7 @@ function currentTabReceived(tab) {
 	//		- Tab hasn't connected (=> it wouldn't appear in connectedTabId)
 	//		- User is on a page (not newtab, settings, etc.)
 	if (connectedTabId.indexOf(tab.id) == -1
-			&& tab.url && getProtocol(tab.url) != "chrome:") {
+			&& tab.url && (getProtocol(tab.url) == "http:" || getProtocol(tab.url) == "https:")) {
 		chrome.tabs.executeScript(tab.id, {code: '(' + contentScript + ')();'}, function() {
 			chrome.tabs.sendMessage(tab.id, tab.id);
 		});
@@ -42,7 +42,7 @@ function currentTabReceived(tab) {
 		}
 
 		// If the user is on a page (not newtab, settings, etc.) then update currentInfo
-		if (getProtocol(tab.url) != "chrome:") {
+		if (getProtocol(tab.url) == "http:" || getProtocol(tab.url) == "https:") {
 			currentPageInfo.domain = currentTabDomain;
 			currentPageInfo.startTime = new Date();
 		}
